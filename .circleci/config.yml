@@ -1,1 +1,594 @@
+version: 2.1
 
+orbs:
+  slack: circleci/slack@4.4.2
+
+var_7: &workspace_location ~/project
+
+commands:
+  custom_attach_workspace:
+    description: Attach workspace at a predefined location
+    steps:
+      - attach_workspace:
+          at: *workspace_location
+
+  deploy_to_cloudhub:
+    description: Deploy to Cloudhub
+    parameters:
+      APP_NAME:
+        type: string
+      BUSINESS_GROUP:
+        type: string
+      CLOUDHUB_ENV:
+        type: string
+      CLOUDHUB_NAME:
+        type: string
+      CLOUDHUB_REGION:
+        type: string
+      MULE_WORKER_NUMBER:
+        type: integer
+      MULE_WORKER_SIZE:
+        type: string
+    steps:
+      - run:
+          name: Cloudhub Deployment
+          no_output_timeout: 20m
+          command: |
+            if [ -f ./target/version.txt ];
+            then
+              VERSION=$(cat ./target/version.txt)
+              echo ""
+              echo "Build Version: $VERSION"
+              echo ""
+              mvn versions:set -DnewVersion=$VERSION \
+                -Danypoint.user=${ANYPOINT_USER} \
+                -Danypoint.password=${ANYPOINT_PASSWORD} \
+                -Dmulerepo.user=${MULEREPO_USER} \
+                -Dmulerepo.password=${MULEREPO_PASSWORD} \
+                -Dpgxrepo.user=${PGXREPO_USER} \
+                -Dpgxrepo.password=${PGXREPO_PASSWORD}
+              mvn versions:update-child-modules \
+                -Danypoint.user=${ANYPOINT_USER} \
+                -Danypoint.password=${ANYPOINT_PASSWORD} \
+                -Dmulerepo.user=${MULEREPO_USER} \
+                -Dmulerepo.password=${MULEREPO_PASSWORD} \
+                -Dpgxrepo.user=${PGXREPO_USER} \
+                -Dpgxrepo.password=${PGXREPO_PASSWORD}
+            fi
+            mvn -s settings.xml mule:deploy \
+              -Dmule.artifact=./target/<< parameters.APP_NAME >>-$VERSION-mule-application.jar \
+              -Danypoint.user=${ANYPOINT_USER} \
+              -Danypoint.password=${ANYPOINT_PASSWORD} \
+              -Dmulerepo.user=${MULEREPO_USER} \
+              -Dmulerepo.password=${MULEREPO_PASSWORD} \
+              -Dpgxrepo.user=${PGXREPO_USER} \
+              -Dpgxrepo.password=${PGXREPO_PASSWORD} \
+              -Dmule.env=${MULE_ENV} \
+              -Dmule.key=${ENCRYPTION_KEY} \
+              -Dcloudhub.env=<< parameters.CLOUDHUB_ENV >> \
+              -Dcloudhub.name=<< parameters.CLOUDHUB_NAME >> \
+              -Dcloudhub.region=<< parameters.CLOUDHUB_REGION >> \
+              -Dworker.number=<< parameters.MULE_WORKER_NUMBER >> \
+              -Dworker.size=<< parameters.MULE_WORKER_SIZE >> \
+              -DbusinessGroup=<< parameters.BUSINESS_GROUP >> \
+              -DobjectStoreV2=true \
+              -Danypoint.platform.client_secret=${ANYPOINT_PLATFORM_CLIENT_SECRET} \
+              -Danypoint.platform.client_id=${ANYPOINT_PLATFORM_CLIENT_ID} \
+              -Dlog4j2.custompath=${LOG4J_CUSTOMPATH} \
+              -Dlog4j2.host=${LOG4J_HOST} \
+              -Dlog4j2.port=${LOG4J_PORT} \
+              -Dlog4j2.token=${LOG4J_TOKEN}
+
+  slack_notify_pass:
+    description: Send Slack notify on pass
+    parameters:
+      CLOUDHUB_NAME:
+        type: string
+      MESSAGE:
+        type: string
+      SLACK_ENV:
+        type: string
+    steps:
+      - slack/notify:
+          event: pass
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "<< parameters.MESSAGE >>: << parameters.CLOUDHUB_NAME >> :tada:",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Project*:\n${CIRCLE_PROJECT_REPONAME}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*When*:\n$(date +'%m/%d/%Y %r')"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment*:\n<< parameters.SLACK_ENV >>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Pipline Number*:\n<< pipeline.number >>"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Job"
+                      },
+                      "url": "${CIRCLE_BUILD_URL}"
+                    }
+                  ]
+                }
+              ]
+            }
+
+  slack_notify_fail:
+    description: Send Slack notify on failures
+    parameters:
+      CLOUDHUB_NAME:
+        type: string
+      SLACK_ENV:
+        type: string
+    steps:
+      - slack/notify:
+          event: fail
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Job Failed for Mulesoft App: << parameters.CLOUDHUB_NAME >> :red_circle:",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Project*:\n${CIRCLE_PROJECT_REPONAME}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*When*:\n$(date +'%m/%d/%Y %r')"
+                    }
+                  ]
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment*:\n<< parameters.SLACK_ENV >>"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Pipline Number*:\n<< pipeline.number >>"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Job"
+                      },
+                      "url": "${CIRCLE_BUILD_URL}"
+                    }
+                  ]
+                }
+              ]
+            }
+
+jobs:
+  build-test:
+    docker:
+      - image: 'circleci/openjdk:8-jdk'
+        auth:
+          username: $DOCKERHUB_USER
+          password: $DOCKERHUB_PASSWORD
+        environment:
+          TZ: "America/Denver"
+    parameters:
+      APP_NAME:
+        type: string
+      CLOUDHUB_NAME:
+        type: string
+      SLACK_ENV:
+        type: string
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - << parameters.APP_NAME >>-{{ checksum "pom.xml" }}
+            - << parameters.APP_NAME >>-
+
+      - run:
+          name: Build
+          command: |
+            REPO_EXISTS=$(curl -I -u ${PGXREPO_USER}:${PGXREPO_PASSWORD} https://pgx.jfrog.io/artifactory/libs-release-local/1055ddef-3389-44d7-b9d6-1e64752d574a/<< parameters.APP_NAME >>/maven-metadata.xml -o /dev/null -w '%{http_code}\n' -s)
+            if [ $REPO_EXISTS != 200 ]
+            then
+              if [ "${MULE_ENV}" = "dev" ]
+              then
+                NEWVERSION="1.0.0-SNAPSHOT"
+              else
+                NEWVERSION="1.0.0"
+              fi
+              echo "New Version: ${NEWVERSION}"
+            else
+              VERSION=$(curl -sS -u ${PGXREPO_USER}:${PGXREPO_PASSWORD} https://pgx.jfrog.io/artifactory/libs-release-local/1055ddef-3389-44d7-b9d6-1e64752d574a/<< parameters.APP_NAME >>/maven-metadata.xml | grep -oP '(?<=<latest>).*?(?=</latest>)')
+              echo ""
+              echo "Current Version: ${VERSION}"
+              MAJ=$(echo $VERSION | cut -d. -f1,2)
+              MIN=$(echo $VERSION | cut -d. -f3)
+              NEWMIN=$((${MIN/$'\r'/} + 1))
+              if [ "${MULE_ENV}" = "dev" ]
+              then
+                NEWVERSION="${MAJ}.${NEWMIN}-SNAPSHOT"
+              else
+                NEWVERSION="${MAJ}.${NEWMIN}"
+              fi
+              echo "New Version: ${NEWVERSION}"
+            fi
+            echo ""
+            echo "Building version: ${NEWVERSION}"
+            echo ""
+            mvn versions:set -DnewVersion=$NEWVERSION \
+              -Danypoint.user=${ANYPOINT_USER} \
+              -Danypoint.password=${ANYPOINT_PASSWORD} \
+              -Dmulerepo.user=${MULEREPO_USER} \
+              -Dmulerepo.password=${MULEREPO_PASSWORD} \
+              -Dpgxrepo.user=${PGXREPO_USER} \
+              -Dpgxrepo.password=${PGXREPO_PASSWORD}
+            mvn versions:update-child-modules \
+              -Danypoint.user=${ANYPOINT_USER} \
+              -Danypoint.password=${ANYPOINT_PASSWORD} \
+              -Dmulerepo.user=${MULEREPO_USER} \
+              -Dmulerepo.password=${MULEREPO_PASSWORD} \
+              -Dpgxrepo.user=${PGXREPO_USER} \
+              -Dpgxrepo.password=${PGXREPO_PASSWORD}
+            mvn -s settings.xml clean package \
+              -DskipTests \
+              -Danypoint.user=${ANYPOINT_USER} \
+              -Danypoint.password=${ANYPOINT_PASSWORD} \
+              -Dmulerepo.user=${MULEREPO_USER} \
+              -Dmulerepo.password=${MULEREPO_PASSWORD} \
+              -Dpgxrepo.user=${PGXREPO_USER} \
+              -Dpgxrepo.password=${PGXREPO_PASSWORD}
+            echo "$NEWVERSION" > ./target/version.txt
+
+      - run:
+          name: mUnit Test
+          command: |
+            mvn -s settings.xml test \
+              -Danypoint.user=${ANYPOINT_USER} \
+              -Danypoint.password=${ANYPOINT_PASSWORD} \
+              -Dmulerepo.user=${MULEREPO_USER} \
+              -Dmulerepo.password=${MULEREPO_PASSWORD} \
+              -Dpgxrepo.user=${PGXREPO_USER} \
+              -Dpgxrepo.password=${PGXREPO_PASSWORD}
+            mkdir ~/munit-coverage-results
+            mkdir ~/munit-test-results
+            if [ -d target/site/munit/coverage/ ];
+            then
+              cp -r target/site/munit/coverage/. ~/munit-coverage-results
+              cp -r target/surefire-reports/. ~/munit-test-results
+            fi
+
+      - store_test_results:
+          path: ~/munit-test-results
+
+      - store_artifacts:
+          path: ~/munit-coverage-results
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: << parameters.APP_NAME >>-{{ checksum "pom.xml" }}
+
+      - persist_to_workspace:
+          root: *workspace_location
+          paths:
+            - ./target/
+
+      - slack_notify_pass:
+          CLOUDHUB_NAME: "<< parameters.CLOUDHUB_NAME >>"
+          MESSAGE: "Build Successful for Mulesoft App"
+          SLACK_ENV: "<< parameters.SLACK_ENV >>"
+
+      - slack_notify_fail:
+          SLACK_ENV: "<< parameters.SLACK_ENV >>"
+          CLOUDHUB_NAME: "<< parameters.CLOUDHUB_NAME >>"
+
+  deploy-artifact:
+    docker:
+      - image: 'circleci/openjdk:8-jdk'
+        auth:
+          username: $DOCKERHUB_USER
+          password: $DOCKERHUB_PASSWORD
+        environment:
+          TZ: "America/Denver"
+    parameters:
+      APP_NAME:
+        type: string
+
+    steps:
+      - checkout
+      - custom_attach_workspace
+      - restore_cache:
+          keys:
+            - << parameters.APP_NAME >>-{{ checksum "pom.xml" }}
+            - << parameters.APP_NAME >>-
+
+      - run:
+          name: Upload Artifact to Artifactory
+          no_output_timeout: 20m
+          command: |
+            if [ -f ./target/version.txt ];
+            then
+              VERSION=$(cat ./target/version.txt)
+              echo ""
+              echo "Build Version: $VERSION"
+              echo ""
+              mvn versions:set -DnewVersion=$VERSION \
+                -Danypoint.user=${ANYPOINT_USER} \
+                -Danypoint.password=${ANYPOINT_PASSWORD} \
+                -Dmulerepo.user=${MULEREPO_USER} \
+                -Dmulerepo.password=${MULEREPO_PASSWORD} \
+                -Dpgxrepo.user=${PGXREPO_USER} \
+                -Dpgxrepo.password=${PGXREPO_PASSWORD}
+              mvn versions:update-child-modules \
+                -Danypoint.user=${ANYPOINT_USER} \
+                -Danypoint.password=${ANYPOINT_PASSWORD} \
+                -Dmulerepo.user=${MULEREPO_USER} \
+                -Dmulerepo.password=${MULEREPO_PASSWORD} \
+                -Dpgxrepo.user=${PGXREPO_USER} \
+               -Dpgxrepo.password=${PGXREPO_PASSWORD}
+            fi
+            mvn -s settings.xml deploy \
+              -DskipTests \
+              -Danypoint.user=${ANYPOINT_USER} \
+              -Danypoint.password=${ANYPOINT_PASSWORD} \
+              -Dmulerepo.user=${MULEREPO_USER} \
+              -Dmulerepo.password=${MULEREPO_PASSWORD} \
+              -Dpgxrepo.user=${PGXREPO_USER} \
+              -Dpgxrepo.password=${PGXREPO_PASSWORD}
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: << parameters.APP_NAME >>-{{ checksum "pom.xml" }}
+
+      - persist_to_workspace:
+          root: *workspace_location
+          paths:
+            - ./target/
+
+  deploy-cloudhub:
+    docker:
+      - image: 'circleci/openjdk:8-jdk'
+        auth:
+          username: $DOCKERHUB_USER
+          password: $DOCKERHUB_PASSWORD
+        environment:
+          TZ: "America/Denver"
+    parameters:
+      APP_NAME:
+        type: string
+      BUSINESS_GROUP:
+        type: string
+      CLOUDHUB_ENV:
+        type: string
+      CLOUDHUB_NAME:
+        type: string
+      CLOUDHUB_REGION:
+        type: string
+      MULE_WORKER_NUMBER:
+        type: integer
+      MULE_WORKER_SIZE:
+        type: string
+      SLACK_ENV:
+        type: string
+
+    steps:
+      - checkout
+      - custom_attach_workspace
+      - restore_cache:
+          keys:
+            - << parameters.APP_NAME >>-{{ checksum "pom.xml" }}
+            - << parameters.APP_NAME >>-
+
+      - deploy_to_cloudhub:
+          APP_NAME: << parameters.APP_NAME >>
+          BUSINESS_GROUP: << parameters.BUSINESS_GROUP >>
+          CLOUDHUB_ENV: << parameters.CLOUDHUB_ENV >>
+          CLOUDHUB_NAME: << parameters.CLOUDHUB_NAME >>
+          CLOUDHUB_REGION: << parameters.CLOUDHUB_REGION >>
+          MULE_WORKER_NUMBER: << parameters.MULE_WORKER_NUMBER >>
+          MULE_WORKER_SIZE: << parameters.MULE_WORKER_SIZE >>
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: << parameters.APP_NAME >>-{{ checksum "pom.xml" }}
+
+      - slack_notify_pass:
+          CLOUDHUB_NAME: "<< parameters.CLOUDHUB_NAME >>"
+          MESSAGE: "Deployment Successful for Mulesoft App"
+          SLACK_ENV: "<< parameters.SLACK_ENV >>"
+
+      - slack_notify_fail:
+          SLACK_ENV: "<< parameters.SLACK_ENV >>"
+          CLOUDHUB_NAME: "<< parameters.CLOUDHUB_NAME >>"
+
+workflows:
+  build-test-deploy-dev:
+    jobs:
+      - build-test:
+          name: build-test-dev
+          APP_NAME: "anypoint-auditlogs-to-splunk"
+          CLOUDHUB_NAME: "pgx-dev-anypoint-auditlogs-to-splunk"
+          SLACK_ENV: "Dev/Test"
+          context:
+            - DOCKER_HUB_CREDS
+            - SLACK_CREDS
+            - MULESOFT_COMMON
+            - MULESOFT_CR_DEV
+          filters:
+            branches:
+              only: develop
+
+      - deploy-cloudhub:
+          name: deploy-cloudhub-dev
+          APP_NAME: "anypoint-auditlogs-to-splunk"
+          BUSINESS_GROUP: "CreditRepair"
+          CLOUDHUB_ENV: "DEV"
+          CLOUDHUB_NAME: "pgx-dev-anypoint-auditlogs-to-splunk"
+          CLOUDHUB_REGION: "us-west-2"
+          MULE_WORKER_NUMBER: 1
+          MULE_WORKER_SIZE: "MICRO"
+          SLACK_ENV: "Dev/Test"
+          context:
+            - DOCKER_HUB_CREDS
+            - SLACK_CREDS
+            - MULESOFT_COMMON
+            - MULESOFT_CR_DEV
+          filters:
+            branches:
+              only: develop
+          requires:
+            - build-test-dev
+
+  build-test-deploy:
+    jobs:
+      - build-test:
+          name: build-test-stg-prod
+          APP_NAME: "anypoint-auditlogs-to-splunk"
+          CLOUDHUB_NAME: "pgx-anypoint-auditlogs-to-splunk"
+          SLACK_ENV: "QA/STG/PROD"
+          context:
+            - DOCKER_HUB_CREDS
+            - SLACK_CREDS
+            - MULESOFT_COMMON
+            - MULESOFT_CR_QA
+          filters:
+            branches:
+              only: release
+
+      - deploy-cloudhub:
+          name: deploy-cloudhub-qa
+          APP_NAME: "anypoint-auditlogs-to-splunk"
+          BUSINESS_GROUP: "CreditRepair"
+          CLOUDHUB_ENV: "QA"
+          CLOUDHUB_NAME: "pgx-qa-anypoint-auditlogs-to-splunk"
+          CLOUDHUB_REGION: "us-west-2"
+          MULE_WORKER_NUMBER: 1
+          MULE_WORKER_SIZE: "MICRO"
+          SLACK_ENV: "QA"
+          context:
+            - DOCKER_HUB_CREDS
+            - SLACK_CREDS
+            - MULESOFT_COMMON
+            - MULESOFT_CR_QA
+          filters:
+            branches:
+              only: release
+          requires:
+            - build-test-stg-prod
+
+      - deploy-cloudhub:
+          name: deploy-cloudhub-stg
+          APP_NAME: "anypoint-auditlogs-to-splunk"
+          BUSINESS_GROUP: "CreditRepair"
+          CLOUDHUB_ENV: "STG"
+          CLOUDHUB_NAME: "pgx-stg-anypoint-auditlogs-to-splunk"
+          CLOUDHUB_REGION: "us-west-2"
+          MULE_WORKER_NUMBER: 1
+          MULE_WORKER_SIZE: "SMALL"
+          SLACK_ENV: "Stg"
+          context:
+            - DOCKER_HUB_CREDS
+            - SLACK_CREDS
+            - MULESOFT_COMMON
+            - MULESOFT_CR_STG
+          filters:
+            branches:
+              only: release
+          requires:
+            - build-test-stg-prod
+
+      - deploy-artifact:
+          name: deploy-artifact
+          APP_NAME: "anypoint-auditlogs-to-splunk"
+          context:
+            - DOCKER_HUB_CREDS
+            - SLACK_CREDS
+            - MULESOFT_COMMON
+            - MULESOFT_CR_QA
+          filters:
+            branches:
+              only: release
+          requires:
+            - deploy-cloudhub-qa
+            - deploy-cloudhub-stg
+
+      - hold:
+          name: prod-approval
+          type: approval
+          context:
+            - DOCKER_HUB_CREDS
+            - SLACK_CREDS
+            - MULESOFT_COMMON
+            - MULESOFT_CR_PROD
+          requires:
+            - deploy-artifact
+
+      - deploy-cloudhub:
+          name: deploy-cloudhub-prod
+          APP_NAME: "anypoint-auditlogs-to-splunk"
+          BUSINESS_GROUP: "CreditRepair"
+          CLOUDHUB_ENV: "PROD"
+          CLOUDHUB_NAME: "pgx-anypoint-auditlogs-to-splunk"
+          CLOUDHUB_REGION: "us-west-2"
+          MULE_WORKER_NUMBER: 2
+          MULE_WORKER_SIZE: "SMALL"
+          SLACK_ENV: "Prod"
+          context:
+            - DOCKER_HUB_CREDS
+            - SLACK_CREDS
+            - MULESOFT_COMMON
+            - MULESOFT_CR_PROD
+          filters:
+            branches:
+              only: release
+          requires:
+            - prod-approval
