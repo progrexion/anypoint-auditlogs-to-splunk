@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.1.0 http://maven.apache.org/xsd/settings-1.1.0.xsd">
+    <servers>
+        <!-- MuleSoft Nexus EE Repository -->
+        <server>
+            <id>MuleRepository</id>
+            <username>${mulerepo.user}</username>
+            <password>${mulerepo.password}</password>
+        </server>
+        <!-- Corporate Exchange Repository -->
+        <server>
+            <id>anypoint-exchange</id>
+            <username>${anypoint.user}</username>
+            <password>${anypoint.password}</password>
+        </server>
+        <server>
+            <id>anypoint-exchange-v2</id>
+            <username>${anypoint.user}</username>
+            <password>${anypoint.password}</password>
+        </server>
+        <server>
+            <id>vwsl-mvnrepo-libs-release</id>
+            <username>${pgxrepo.user}</username>
+            <password>${pgxrepo.password}</password>
+        </server>
+    </servers>
+
+    <profiles>
+        <profile>
+            <id>Mule</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <repositories>
+                <repository>
+                    <id>MuleRepository</id>
+                    <name>MuleRepository</name>
+                    <url>https://repository.mulesoft.org/nexus-ee/content/repositories/releases-ee/</url>
+                    <layout>default</layout>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+        </profile>
+    </profiles>
+</settings>

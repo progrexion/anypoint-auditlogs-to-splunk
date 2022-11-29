@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
+	<flow name="auditlogs-to-splunk-scheduler" doc:id="8217e7cc-fcee-437a-b2cc-b6f6328b975e" >
+		<scheduler doc:name="Scheduler" doc:id="638b2c28-521a-4f21-bb8d-8c1a95bb64d7" >
+			<scheduling-strategy >
+				<cron expression="${scheduler.frequency.cron}" timeZone="${scheduler.frequency.timezone}" />
+			</scheduling-strategy>
+		</scheduler>
+		<set-variable value='#[now() &gt;&gt; "UTC"]' doc:name="Set queryToDateTime" doc:id="9cc0cd21-4d1c-40f3-8553-8af351cc834f" variableName="queryToDateTime" />
+		<os:retrieve doc:name="Retrieve From Datetime" doc:id="07b5197f-a466-4e2f-9e27-e32f31c827a5" key="queryFromDateTime" objectStore="watermark-object-store" target="queryFromDateTime">
+				<os:default-value><![CDATA[#[//Use property scheduler.startTime to extract from a particular Date. Comment line 2 if use Period of time
+//p('scheduler.startTime') as DateTime
+
+//Use property schedule.default-time-period to extract from a particular Period of Time, uncomment below line in case need it
+vars.queryToDateTime - p('schedule.default-time-period') as Period]]]></os:default-value>
+			</os:retrieve>
+		<logger level="INFO" doc:name="Logger" doc:id="01e1ec06-9d8c-4a3a-af9c-642282f191e8" message="Start Process - From: #[vars.queryFromDateTime] - to: #[vars.queryToDateTime]" />
+		<flow-ref doc:name="get-anypoint-platform-token-cached" doc:id="f72a9be1-346b-4f1f-b878-35aa2ce0e51e" name="anypoint-platform-get-token-cached" target="token"/>
+		<flow-ref doc:name="get-business-groups" doc:id="97cd6284-4066-48bc-abbf-4e0e2a63d27a" name="get-business-groups" target="businessGroups"/>
+		<parallel-foreach collection="#[vars.businessGroups]">
+			<set-variable variableName="businessGroup" value="#[payload]" doc:name="Set businessGroup"/>
+			<logger level="INFO" doc:name="Logger" doc:id="750c973a-da20-4db6-a930-c1b68349c88e" message="Processing Business Group - Id: #[vars.businessGroup.id] - Name: #[vars.businessGroup.name]"/>
+			<flow-ref doc:name="audit-log-pagination" doc:id="219a4dd5-2fac-4e7f-9ea6-39af3ce9387f" name="audit-log-pagination"/>
+			<logger level="INFO" doc:name="Logger" doc:id="923e3b2d-3fd3-4963-a0e7-dac6b3e6593f" message="Finished processing Business Group - Id: #[vars.businessGroup.id] - Name: #[vars.businessGroup.name]" />
+		</parallel-foreach>
+		<os:store doc:name="Set From DateTime" doc:id="8ffca597-2eae-4103-b648-64c1880db6ed" key="queryFromDateTime" objectStore="watermark-object-store">
+			<os:value ><![CDATA[#[vars.queryToDateTime]]]></os:value>
+		</os:store>
+	</flow>
+<flow name="audit-log-pagination"
+		doc:id="a387bc0e-3e69-47bb-91c5-ff61d4518dfb">
+		<ee:transform doc:name="Pagination Variables"
+			doc:id="7707f766-1fd0-4c0e-a91a-c8ac27ef2293">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable resource="dw/get-pagination-variables.dwl" variableName="offset" />
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="audit-logs-process-extraction"
+			doc:id="afc1469a-d5d8-4425-9f83-8111038cdc14"
+			name="audit-logs-process-extraction" />
+		<ee:transform doc:name="Create Pagination Empty Array" doc:id="e0bf83fe-435b-4ee8-b24d-daf0608783f6">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable resource="dw/get-var-empty-array.dwl" variableName="numberExtractions" />
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Choice"
+			doc:id="12431141-e598-4dd8-a18c-70bd5336e755">
+			<when
+				expression="#[(sizeOf(vars.numberExtractions) default 0) &gt;= 1]">
+				<foreach doc:name="For Each"
+					doc:id="6b12b88c-ecb5-485d-bc60-52ba90c49a01"
+					collection="#[vars.numberExtractions]">
+					<ee:transform doc:name="Pagination Variables" doc:id="f2abda79-b1fd-4caa-9b1c-754e176e45e8">
+						<ee:message />
+						<ee:variables>
+							<ee:set-variable resource="dw/update-pagination-variables.dwl" variableName="offset" />
+						</ee:variables>
+					</ee:transform>
+					<flow-ref doc:name="Audit Logs Extraction "
+						doc:id="420c2fe4-a348-4487-9668-57337a0e60bb"
+						name="audit-logs-process-extraction" />
+				</foreach>
+			</when>
+		</choice>
+	</flow>
+
+
+	<flow name="audit-logs-process-extraction"
+		doc:id="842ff716-b8d0-4639-97fb-ab7f3ad168fc">
+		<flow-ref doc:name="get-audit-logs"
+			doc:id="4ddada27-7d4d-4d17-aa6d-a9271931f7ef"
+			name="get-audit-logs" />
+		<choice doc:name="New Audit Logs"
+			doc:id="0764be42-2619-4a4b-9585-009aae864b0d">
+			<when expression="#[not isEmpty(payload)]">
+				<flow-ref name="send-events"
+					doc:name="send-events" doc:id="993ea128-49dc-4e91-b11d-798daf4f3977"/>
+			</when>
+			<otherwise>
+				<logger level="INFO" doc:name="Logger"
+					doc:id="400d5024-369c-4f8c-9d39-328006cc182c"
+					message="No new events to be Published" />
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

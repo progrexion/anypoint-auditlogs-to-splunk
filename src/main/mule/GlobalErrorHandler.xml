@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:cloudhub="http://www.mulesoft.org/schema/mule/cloudhub" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd">
+	
+	<error-handler name="GlobalErrorHandler" doc:id="189a7da7-8f5b-400a-af1f-6ba88af07f61" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ef15c4f7-29e8-469a-b1bd-16e729891c05" type="ANY">
+			<logger level="ERROR" doc:name="Logger" doc:id="f03b5607-cc41-4052-b056-606999e4b3e3" message="#[error.detailedDescription]"/>
+			<cloudhub:create-notification doc:name="SendNotification" doc:id="a709fe8d-46a7-4a45-875a-61d5848b7f14" config-ref="CloudHub_Config" domain="pgx-${mule.env}-${app.name}">
+				<cloudhub:message ><![CDATA[#["ERROR: Error occurred while sending Anypoint Audit logs to Splunk. Please see below for error message and refer Anypoint Logs for more details"]]]></cloudhub:message>
+				<cloudhub:custom-properties ><![CDATA[#[output application/java
+---
+{
+	"ErrorMessage" : error.detailedDescription
+}]]]></cloudhub:custom-properties>
+			</cloudhub:create-notification>
+		</on-error-propagate>
+	</error-handler>
+</mule>
