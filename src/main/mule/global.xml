@@ -19,9 +19,6 @@ http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/sc
 			</tls:context>
 		</http:request-connection>
 	</http:request-config>
-	<ee:object-store-caching-strategy name="caching-strategy" doc:name="Caching Strategy" doc:id="1e47572b-cb46-4681-be45-693385816c35" keyGenerationExpression="#['CONSTANT']" >
-		<os:private-object-store alias="cache-object-store" entryTtl="${object-store.token.ttl}" expirationInterval="${object-store.token.interval}" persistent="false" entryTtlUnit="MINUTES"/>
-	</ee:object-store-caching-strategy>
 	<os:object-store name="watermark-object-store" doc:name="Object store" doc:id="2428cc3a-8ad8-4cc0-b291-1e9ca64d2b32" entryTtl="${object-store.watermark.ttl}" entryTtlUnit="MINUTES" expirationInterval="${object-store.watermark.interval}" />
 	<global-property doc:name="Global Property" doc:id="a4a96c49-d315-45d3-8280-c785d0100478" name="mule.env" value="dev" />
 	<configuration-properties doc:name="Configuration properties" doc:id="ab90d758-346c-446d-9f2f-f4aa261ffee8" file="mule-app.properties" />

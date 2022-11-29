@@ -8,9 +8,7 @@
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
 		<sub-flow name="anypoint-platform-get-token-cached" doc:id="38bea330-ed0a-43a4-a67d-a4671dca962f" >
-		<ee:cache doc:name="Cache" doc:id="7cd06846-79a5-4ddf-9120-e400504ab17e" cachingStrategy-ref="caching-strategy">
-			<flow-ref doc:name="get-anypoint-platform-token" doc:id="c27e0729-4c22-4117-ab3b-6475f4853a63" name="anypoint-platform-get-token"/>
-		</ee:cache>
+		<flow-ref doc:name="get-anypoint-platform-token" doc:id="c27e0729-4c22-4117-ab3b-6475f4853a63" name="anypoint-platform-get-token" />
 	</sub-flow>
 	<sub-flow name="anypoint-platform-get-token" doc:id="2a912ef4-7fe2-4400-a110-596f4cbeb127" >
 		<http:request method="POST" doc:name="Get Anypoint Token" doc:id="8112cd9c-25fb-419d-9679-de752f10aa60" config-ref="http-anypoint-platform-configuration" path="/accounts/login">
