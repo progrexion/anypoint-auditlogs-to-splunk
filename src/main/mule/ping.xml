@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="pingFlow" doc:id="c867181b-a5a6-47d7-87d0-d1344388ac1b" >
+		<http:listener doc:name="Listener" doc:id="e7b0dcea-9a6b-4054-8f8d-082af8d6dd7c" config-ref="HTTP_Listener_config" path="/api/ping" allowedMethods="GET"/>
+		<ee:transform doc:name="Transform Message" doc:id="860fdf20-98ea-4f10-ba47-a7c40fef76a2" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+ module: p('app.name'),
+ projectVersion: '1.0',
+ apiVersion: '1.0',
+ server: attributes.headers.host,
+ status: "200",
+ message: "Alive"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

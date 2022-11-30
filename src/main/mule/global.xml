@@ -31,4 +31,10 @@ http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/sc
 	</secure-properties:config>
 	<global-property doc:name="Global Property" doc:id="20c11f1e-1d5e-412d-8bc5-8480432d0085" name="mule.key" value="progrexion" />
 	<configuration doc:name="Configuration" doc:id="0d2a9fb0-c519-450b-b8a2-5543e971d507" defaultErrorHandler-ref="GlobalErrorHandler" />
+	<ee:object-store-caching-strategy name="Caching_Strategy" doc:name="Caching Strategy" doc:id="ed0fdfc2-fb3b-4c18-b0f8-2153916a97ae" keyGenerationExpression="#['TOKEN']" >
+		<os:private-object-store entryTtl="${object-store.token.ttl}" entryTtlUnit="MINUTES" expirationInterval="${object-store.token.interval}" />
+	</ee:object-store-caching-strategy>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="680fe741-b32a-407a-a165-44444c2af2cb" >
+		<http:listener-connection host="0.0.0.0" port="${http.private.port}" />
+	</http:listener-config>
 </mule>
