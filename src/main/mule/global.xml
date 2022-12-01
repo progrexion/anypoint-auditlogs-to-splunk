@@ -9,7 +9,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
 http://www.mulesoft.org/schema/mule/cloudhub http://www.mulesoft.org/schema/mule/cloudhub/current/mule-cloudhub.xsd
 http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
-	<http:request-config name="http-anypoint-platform-configuration" doc:name="HTTP Request configuration" doc:id="4617f1c3-4f72-4fa9-967f-fa0b1eb17e89" basePath="${anypoint.platform.basepath}" responseTimeout="${anypoint.platform.timeout}">
+	<http:request-config name="http-anypoint-platform-configuration" doc:name="HTTP Request configuration" doc:id="4617f1c3-4f72-4fa9-967f-fa0b1eb17e89" basePath="${anypoint.platform.basepath}" responseTimeout="${anypoint.platform.timeout}" enableCookies="false">
 		<http:request-connection protocol="${anypoint.platform.protocol}" host="${anypoint.platform.host}" port="${anypoint.platform.port}" />
 	</http:request-config>
 	<http:request-config name="http-splunk-configuration" doc:name="HTTP Request configuration" doc:id="cf6d29db-38de-4791-b70e-3e5a7736b96a" basePath="${splunk.hec.basepath}">
