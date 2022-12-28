@@ -488,13 +488,13 @@ workflows:
           requires:
             - build-test-dev
 
-  build-test-deploy:
+  build-test-deploy-qa:
     jobs:
       - build-test:
-          name: build-test-stg-prod
+          name: build-test-qa
           APP_NAME: "anypoint-auditlogs-to-splunk"
           CLOUDHUB_NAME: "pgx-anypoint-auditlogs-to-splunk"
-          SLACK_ENV: "QA/STG/PROD"
+          SLACK_ENV: "QA"
           context:
             - DOCKER_HUB_CREDS
             - SLACK_CREDS
@@ -502,7 +502,7 @@ workflows:
             - MULESOFT_CR_QA
           filters:
             branches:
-              only: release
+              only: qa
 
       - deploy-cloudhub:
           name: deploy-cloudhub-qa
@@ -524,6 +524,22 @@ workflows:
               only: release
           requires:
             - build-test-stg-prod
+
+    build-test-deploy-stg-prod:
+    jobs:
+      - build-test:
+          name: build-test-stg-prod
+          APP_NAME: "anypoint-auditlogs-to-splunk"
+          CLOUDHUB_NAME: "pgx-anypoint-auditlogs-to-splunk"
+          SLACK_ENV: "STG/PROD"
+          context:
+            - DOCKER_HUB_CREDS
+            - SLACK_CREDS
+            - MULESOFT_COMMON
+            - MULESOFT_CR_QA
+          filters:
+            branches:
+              only: release          
 
       - deploy-cloudhub:
           name: deploy-cloudhub-stg
