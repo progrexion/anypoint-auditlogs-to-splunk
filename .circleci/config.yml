@@ -523,9 +523,9 @@ workflows:
             branches:
               only: release
           requires:
-            - build-test-stg-prod
+            - build-test-qa
 
-    build-test-deploy-stg-prod:
+  build-test-deploy-stg-prod:
     jobs:
       - build-test:
           name: build-test-stg-prod
