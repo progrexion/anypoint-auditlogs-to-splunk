@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  slack: circleci/slack@4.4.2
+  ms-teams-notifier-private-orb: progrexion/ms-teams-notifier-private-orb@1.1.5 #slack: circleci/slack@4.4.2
 
 var_7: &workspace_location ~/project
 
@@ -79,133 +79,133 @@ commands:
               -Dlog4j2.port=${LOG4J_PORT} \
               -Dlog4j2.token=${LOG4J_TOKEN}
 
-  slack_notify_pass:
-    description: Send Slack notify on pass
-    parameters:
-      CLOUDHUB_NAME:
-        type: string
-      MESSAGE:
-        type: string
-      SLACK_ENV:
-        type: string
-    steps:
-      - slack/notify:
-          event: pass
-          custom: |
-            {
-              "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "<< parameters.MESSAGE >>: << parameters.CLOUDHUB_NAME >> :tada:",
-                    "emoji": true
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Project*:\n${CIRCLE_PROJECT_REPONAME}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*When*:\n$(date +'%m/%d/%Y %r')"
-                    }
-                  ]
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Environment*:\n<< parameters.SLACK_ENV >>"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Pipline Number*:\n<< pipeline.number >>"
-                    }
-                  ]
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "View Job"
-                      },
-                      "url": "${CIRCLE_BUILD_URL}"
-                    }
-                  ]
-                }
-              ]
-            }
+  # slack_notify_pass:
+  #   description: Send Slack notify on pass
+  #   parameters:
+  #     CLOUDHUB_NAME:
+  #       type: string
+  #     MESSAGE:
+  #       type: string
+  #     SLACK_ENV:
+  #       type: string
+  #   steps:
+  #     - slack/notify:
+  #         event: pass
+  #         custom: |
+  #           {
+  #             "blocks": [
+  #               {
+  #                 "type": "header",
+  #                 "text": {
+  #                   "type": "plain_text",
+  #                   "text": "<< parameters.MESSAGE >>: << parameters.CLOUDHUB_NAME >> :tada:",
+  #                   "emoji": true
+  #                 }
+  #               },
+  #               {
+  #                 "type": "section",
+  #                 "fields": [
+  #                   {
+  #                     "type": "mrkdwn",
+  #                     "text": "*Project*:\n${CIRCLE_PROJECT_REPONAME}"
+  #                   },
+  #                   {
+  #                     "type": "mrkdwn",
+  #                     "text": "*When*:\n$(date +'%m/%d/%Y %r')"
+  #                   }
+  #                 ]
+  #               },
+  #               {
+  #                 "type": "section",
+  #                 "fields": [
+  #                   {
+  #                     "type": "mrkdwn",
+  #                     "text": "*Environment*:\n<< parameters.SLACK_ENV >>"
+  #                   },
+  #                   {
+  #                     "type": "mrkdwn",
+  #                     "text": "*Pipline Number*:\n<< pipeline.number >>"
+  #                   }
+  #                 ]
+  #               },
+  #               {
+  #                 "type": "actions",
+  #                 "elements": [
+  #                   {
+  #                     "type": "button",
+  #                     "text": {
+  #                       "type": "plain_text",
+  #                       "text": "View Job"
+  #                     },
+  #                     "url": "${CIRCLE_BUILD_URL}"
+  #                   }
+  #                 ]
+  #               }
+  #             ]
+  #           }
 
-  slack_notify_fail:
-    description: Send Slack notify on failures
-    parameters:
-      CLOUDHUB_NAME:
-        type: string
-      SLACK_ENV:
-        type: string
-    steps:
-      - slack/notify:
-          event: fail
-          custom: |
-            {
-              "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "Job Failed for Mulesoft App: << parameters.CLOUDHUB_NAME >> :red_circle:",
-                    "emoji": true
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Project*:\n${CIRCLE_PROJECT_REPONAME}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*When*:\n$(date +'%m/%d/%Y %r')"
-                    }
-                  ]
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Environment*:\n<< parameters.SLACK_ENV >>"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Pipline Number*:\n<< pipeline.number >>"
-                    }
-                  ]
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "View Job"
-                      },
-                      "url": "${CIRCLE_BUILD_URL}"
-                    }
-                  ]
-                }
-              ]
-            }
+  # slack_notify_fail:
+  #   description: Send Slack notify on failures
+  #   parameters:
+  #     CLOUDHUB_NAME:
+  #       type: string
+  #     SLACK_ENV:
+  #       type: string
+  #   steps:
+  #     - slack/notify:
+  #         event: fail
+  #         custom: |
+  #           {
+  #             "blocks": [
+  #               {
+  #                 "type": "header",
+  #                 "text": {
+  #                   "type": "plain_text",
+  #                   "text": "Job Failed for Mulesoft App: << parameters.CLOUDHUB_NAME >> :red_circle:",
+  #                   "emoji": true
+  #                 }
+  #               },
+  #               {
+  #                 "type": "section",
+  #                 "fields": [
+  #                   {
+  #                     "type": "mrkdwn",
+  #                     "text": "*Project*:\n${CIRCLE_PROJECT_REPONAME}"
+  #                   },
+  #                   {
+  #                     "type": "mrkdwn",
+  #                     "text": "*When*:\n$(date +'%m/%d/%Y %r')"
+  #                   }
+  #                 ]
+  #               },
+  #               {
+  #                 "type": "section",
+  #                 "fields": [
+  #                   {
+  #                     "type": "mrkdwn",
+  #                     "text": "*Environment*:\n<< parameters.SLACK_ENV >>"
+  #                   },
+  #                   {
+  #                     "type": "mrkdwn",
+  #                     "text": "*Pipline Number*:\n<< pipeline.number >>"
+  #                   }
+  #                 ]
+  #               },
+  #               {
+  #                 "type": "actions",
+  #                 "elements": [
+  #                   {
+  #                     "type": "button",
+  #                     "text": {
+  #                       "type": "plain_text",
+  #                       "text": "View Job"
+  #                     },
+  #                     "url": "${CIRCLE_BUILD_URL}"
+  #                   }
+  #                 ]
+  #               }
+  #             ]
+  #           }
 
 jobs:
   build-test:
@@ -221,8 +221,8 @@ jobs:
         type: string
       CLOUDHUB_NAME:
         type: string
-      SLACK_ENV:
-        type: string
+      # SLACK_ENV:
+      #    type: string
 
     steps:
       - checkout
@@ -319,15 +319,16 @@ jobs:
           root: *workspace_location
           paths:
             - ./target/
+      - ms-teams-notifier-private-orb/report:
+           webhook_url: $MS_TEAMS_WEBHOOK_URL
+      # - slack_notify_pass:
+      #     CLOUDHUB_NAME: "<< parameters.CLOUDHUB_NAME >>"
+      #     MESSAGE: "Build Successful for Mulesoft App"
+      #     SLACK_ENV: "<< parameters.SLACK_ENV >>"
 
-      - slack_notify_pass:
-          CLOUDHUB_NAME: "<< parameters.CLOUDHUB_NAME >>"
-          MESSAGE: "Build Successful for Mulesoft App"
-          SLACK_ENV: "<< parameters.SLACK_ENV >>"
-
-      - slack_notify_fail:
-          SLACK_ENV: "<< parameters.SLACK_ENV >>"
-          CLOUDHUB_NAME: "<< parameters.CLOUDHUB_NAME >>"
+      # - slack_notify_fail:
+      #     SLACK_ENV: "<< parameters.SLACK_ENV >>"
+      #     CLOUDHUB_NAME: "<< parameters.CLOUDHUB_NAME >>"
 
   deploy-artifact:
     docker:
@@ -416,8 +417,8 @@ jobs:
         type: integer
       MULE_WORKER_SIZE:
         type: string
-      SLACK_ENV:
-        type: string
+      # SLACK_ENV:
+      #   type: string
 
     steps:
       - checkout
@@ -440,15 +441,16 @@ jobs:
           paths:
             - ~/.m2
           key: << parameters.APP_NAME >>-{{ checksum "pom.xml" }}
+      - ms-teams-notifier-private-orb/report:
+          webhook_url: $MS_TEAMS_WEBHOOK_URL
+      # - slack_notify_pass:
+      #     CLOUDHUB_NAME: "<< parameters.CLOUDHUB_NAME >>"
+      #     MESSAGE: "Deployment Successful for Mulesoft App"
+      #     SLACK_ENV: "<< parameters.SLACK_ENV >>"
 
-      - slack_notify_pass:
-          CLOUDHUB_NAME: "<< parameters.CLOUDHUB_NAME >>"
-          MESSAGE: "Deployment Successful for Mulesoft App"
-          SLACK_ENV: "<< parameters.SLACK_ENV >>"
-
-      - slack_notify_fail:
-          SLACK_ENV: "<< parameters.SLACK_ENV >>"
-          CLOUDHUB_NAME: "<< parameters.CLOUDHUB_NAME >>"
+      # - slack_notify_fail:
+      #     SLACK_ENV: "<< parameters.SLACK_ENV >>"
+      #     CLOUDHUB_NAME: "<< parameters.CLOUDHUB_NAME >>"
 
 workflows:
   build-test-deploy-dev:
@@ -457,10 +459,10 @@ workflows:
           name: build-test-dev
           APP_NAME: "anypoint-auditlogs-to-splunk"
           CLOUDHUB_NAME: "pgx-dev-anypoint-auditlogs-to-splunk"
-          SLACK_ENV: "Dev/Test"
+          # SLACK_ENV: "Dev/Test"
           context:
             - DOCKER_HUB_CREDS
-            - SLACK_CREDS
+            - orb-publishing #SLACK_CREDS
             - MULESOFT_COMMON
             - MULESOFT_CR_DEV
           filters:
@@ -476,10 +478,10 @@ workflows:
           CLOUDHUB_REGION: "us-west-2"
           MULE_WORKER_NUMBER: 1
           MULE_WORKER_SIZE: "MICRO"
-          SLACK_ENV: "Dev/Test"
+          # SLACK_ENV: "Dev/Test"
           context:
             - DOCKER_HUB_CREDS
-            - SLACK_CREDS
+            - orb-publishing #SLACK_CREDS
             - MULESOFT_COMMON
             - MULESOFT_CR_DEV
           filters:
@@ -488,21 +490,21 @@ workflows:
           requires:
             - build-test-dev
 
-  build-test-deploy:
+  build-test-deploy-qa:
     jobs:
       - build-test:
-          name: build-test-stg-prod
+          name: build-test-qa
           APP_NAME: "anypoint-auditlogs-to-splunk"
           CLOUDHUB_NAME: "pgx-anypoint-auditlogs-to-splunk"
-          SLACK_ENV: "QA/STG/PROD"
+          # SLACK_ENV: "QA"
           context:
             - DOCKER_HUB_CREDS
-            - SLACK_CREDS
+            - orb-publishing #SLACK_CREDS
             - MULESOFT_COMMON
             - MULESOFT_CR_QA
           filters:
             branches:
-              only: release
+              only: qa
 
       - deploy-cloudhub:
           name: deploy-cloudhub-qa
@@ -513,17 +515,33 @@ workflows:
           CLOUDHUB_REGION: "us-west-2"
           MULE_WORKER_NUMBER: 1
           MULE_WORKER_SIZE: "MICRO"
-          SLACK_ENV: "QA"
+          # SLACK_ENV: "QA"
           context:
             - DOCKER_HUB_CREDS
-            - SLACK_CREDS
+            - orb-publishing #SLACK_CREDS
             - MULESOFT_COMMON
             - MULESOFT_CR_QA
           filters:
             branches:
               only: release
           requires:
-            - build-test-stg-prod
+            - build-test-qa
+
+  build-test-deploy-stg-prod:
+    jobs:
+      - build-test:
+          name: build-test-stg-prod
+          APP_NAME: "anypoint-auditlogs-to-splunk"
+          CLOUDHUB_NAME: "pgx-anypoint-auditlogs-to-splunk"
+          # SLACK_ENV: "STG/PROD"
+          context:
+            - DOCKER_HUB_CREDS
+            - orb-publishing #SLACK_CREDS
+            - MULESOFT_COMMON
+            - MULESOFT_CR_QA
+          filters:
+            branches:
+              only: release          
 
       - deploy-cloudhub:
           name: deploy-cloudhub-stg
@@ -534,10 +552,10 @@ workflows:
           CLOUDHUB_REGION: "us-west-2"
           MULE_WORKER_NUMBER: 1
           MULE_WORKER_SIZE: "SMALL"
-          SLACK_ENV: "Stg"
+          # SLACK_ENV: "Stg"
           context:
             - DOCKER_HUB_CREDS
-            - SLACK_CREDS
+            - orb-publishing #SLACK_CREDS
             - MULESOFT_COMMON
             - MULESOFT_CR_STG
           filters:
@@ -551,14 +569,13 @@ workflows:
           APP_NAME: "anypoint-auditlogs-to-splunk"
           context:
             - DOCKER_HUB_CREDS
-            - SLACK_CREDS
+            - orb-publishing #SLACK_CREDS
             - MULESOFT_COMMON
             - MULESOFT_CR_QA
           filters:
             branches:
               only: release
           requires:
-            - deploy-cloudhub-qa
             - deploy-cloudhub-stg
 
       - hold:
@@ -566,7 +583,7 @@ workflows:
           type: approval
           context:
             - DOCKER_HUB_CREDS
-            - SLACK_CREDS
+            - orb-publishing #SLACK_CREDS
             - MULESOFT_COMMON
             - MULESOFT_CR_PROD
           requires:
@@ -581,10 +598,10 @@ workflows:
           CLOUDHUB_REGION: "us-west-2"
           MULE_WORKER_NUMBER: 2
           MULE_WORKER_SIZE: "SMALL"
-          SLACK_ENV: "Prod"
+          # SLACK_ENV: "Prod"
           context:
             - DOCKER_HUB_CREDS
-            - SLACK_CREDS
+            - orb-publishing #SLACK_CREDS
             - MULESOFT_COMMON
             - MULESOFT_CR_PROD
           filters:
